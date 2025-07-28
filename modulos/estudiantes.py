@@ -11,23 +11,38 @@ from tkinter import messagebox
 ctk.set_widget_scaling(1.0)
 ctk.set_window_scaling(1.0)
 
-def mostrar(parent: ctk.CTkFrame, conexion):
+def mostrar(parent: ctk.CTkFrame, conexion, nodo_actual):
 
     # ------------------ Helpers ---------------------------------
     def cargar_datos():
         tabla.delete(*tabla.get_children())
         with conexion.cursor() as cur:
-            cur.execute("""
-                SELECT  codigo_unico,
-                        nombre,
-                        apellido,
-                        correo_institucional,
-                        codigo_tutor,
-                        codigo_carrera,
-                        codigo_facultad
-                FROM v_Estudiante
-                ORDER BY apellido, nombre
-            """)
+            print(nodo_actual)
+            if nodo_actual == "fis":
+                cur.execute("""
+                    SELECT  codigo_unico,
+                            nombre,
+                            apellido,
+                            correo_institucional,
+                            codigo_tutor,
+                            codigo_carrera,
+                            codigo_facultad
+                    FROM v_Estudiante
+                    WHERE codigo_facultad = 'FIS'
+                    ORDER BY apellido, nombre
+                """)
+            else:
+                cur.execute("""
+                    SELECT  codigo_unico,
+                            nombre,
+                            apellido,
+                            correo_institucional,
+                            codigo_tutor,
+                            codigo_carrera,
+                            codigo_facultad
+                    FROM v_Estudiante
+                    ORDER BY apellido, nombre
+                """)
             for codigo, nombre, apellido, correo, tutor, carrera, facultad in cur.fetchall():
                 tabla.insert(
                     "", "end",
@@ -49,10 +64,14 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def insertar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spInsertarEstudiante ?,?,?,?,?,?,?",
-                            (entry_codigo.get(), entry_nombre.get(), entry_apellido.get(),
-                             entry_correo.get(), entry_tutor.get(),
-                             entry_carrera.get(), entry_facultad.get()))
+                if (nodo_actual == "fis" and not entry_facultad.get() == "FIS"):
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    cur.execute("EXEC spInsertarEstudiante ?,?,?,?,?,?,?",
+                                (entry_codigo.get(), entry_nombre.get(), entry_apellido.get(),
+                                 entry_correo.get(), entry_tutor.get(),
+                                 entry_carrera.get(), entry_facultad.get()))
             conexion.commit(); cargar_datos()
         except Exception as e:
             messagebox.showerror("Error al insertar", str(e))
@@ -60,10 +79,14 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def actualizar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spActualizarEstudiante ?,?,?,?,?,?,?",
-                            (entry_codigo.get(), entry_nombre.get(), entry_apellido.get(),
-                             entry_correo.get(), entry_tutor.get(),
-                             entry_carrera.get(), entry_facultad.get()))
+                if nodo_actual == "fis" and not entry_facultad.get() == "FIS":
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    cur.execute("EXEC spActualizarEstudiante ?,?,?,?,?,?,?",
+                                (entry_codigo.get(), entry_nombre.get(), entry_apellido.get(),
+                                 entry_correo.get(), entry_tutor.get(),
+                                 entry_carrera.get(), entry_facultad.get()))
             conexion.commit(); cargar_datos()
         except Exception as e:
             messagebox.showerror("Error al actualizar", str(e))
@@ -71,7 +94,11 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def eliminar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spEliminarEstudiante ?", entry_codigo.get())
+                if nodo_actual == "fis" and not entry_facultad.get() == "FIS":
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    cur.execute("EXEC spEliminarEstudiante ?", entry_codigo.get())
             conexion.commit(); cargar_datos()
         except Exception as e:
             messagebox.showerror("Error al eliminar", str(e))

@@ -94,7 +94,7 @@ class LoginApp(ctk.CTk):
 
             # Oculta el login y abre el panel principal
             self.withdraw()
-            MainApp(conexion, self).mainloop()
+            MainApp(usuario, conexion, self).mainloop()
             # (Cuando MainApp llama a salir(), hará self.deiconify())
         else:
             messagebox.showerror("Acceso denegado", "Credenciales incorrectas")

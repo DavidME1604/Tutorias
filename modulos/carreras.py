@@ -6,16 +6,22 @@ from tkinter import messagebox
 ctk.set_widget_scaling(1.0)
 ctk.set_window_scaling(1.0)
 
-def mostrar(parent: ctk.CTkFrame, conexion):
+def mostrar(parent: ctk.CTkFrame, conexion, nodo_actual):
 
     # ------------------  Helpers  -------------------------------------
     def cargar_datos():
         tabla.delete(*tabla.get_children())
         with conexion.cursor() as cur:
-            cur.execute("""
-                SELECT codigo_carrera, nombre, modalidad, codigo_facultad
-                FROM v_Carrera
-            """)
+            if nodo_actual == "fis":
+                cur.execute("""
+                    SELECT codigo_carrera, nombre, modalidad, codigo_facultad
+                    FROM v_Carrera WHERE codigo_facultad = 'FIS'
+                """)
+            else:
+                cur.execute("""
+                    SELECT codigo_carrera, nombre, modalidad, codigo_facultad
+                    FROM v_Carrera
+                """)
             for codigo, nombre, modalidad, facultad in cur.fetchall():   # <<<
                 tabla.insert("", "end", values=(codigo, nombre,
                                                 modalidad, facultad))
@@ -32,9 +38,18 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def insertar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spInsertarCarrera ?, ?, ?, ?",
-                            (entry_codigo.get(), entry_nombre.get(),
-                             entry_modalidad.get(), entry_facultad.get()))
+                if nodo_actual == "fis":
+                    if not entry_facultad.get() == "FIS":
+                        messagebox.showerror("Error", "La facultad debe ser FIS")
+                        return
+                    else:
+                        cur.execute("EXEC spInsertarCarrera ?, ?, ?, ?",
+                                    (entry_codigo.get(), entry_nombre.get(),
+                                    entry_modalidad.get(), entry_facultad.get()))
+                else:
+                    cur.execute("EXEC spInsertarCarrera ?, ?, ?, ?",
+                                    (entry_codigo.get(), entry_nombre.get(),
+                                    entry_modalidad.get(), entry_facultad.get()))
             conexion.commit(); cargar_datos()
         except Exception as e:
             messagebox.showerror("Error al insertar", str(e))
@@ -42,9 +57,18 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def actualizar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spActualizarCarrera ?, ?, ?",
-                            (entry_codigo.get(), entry_nombre.get(),
-                             entry_modalidad.get()))
+                if nodo_actual == "fis":
+                    if not entry_facultad.get() == "FIS":
+                        messagebox.showerror("Error", "La facultad debe ser FIS")
+                        return
+                    else:
+                        cur.execute("EXEC spActualizarCarrera ?, ?, ?, ?",
+                                    (entry_codigo.get(), entry_nombre.get(),
+                                     entry_modalidad.get(), entry_facultad.get()))
+                else:
+                    cur.execute("EXEC spActualizarCarrera ?, ?, ?",
+                                (entry_codigo.get(), entry_nombre.get(),
+                                entry_modalidad.get()))
                 # Si creas un SP que actualice facultad, cámbialo aquí.
             conexion.commit(); cargar_datos()
         except Exception as e:
@@ -53,7 +77,14 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def eliminar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spEliminarCarrera ?", entry_codigo.get())
+                if nodo_actual == "fis":
+                    if not entry_facultad.get() == "FIS":
+                        messagebox.showerror("Error", "La facultad debe ser FIS")
+                        return
+                    else:
+                        cur.execute("EXEC spEliminarCarrera ?", entry_codigo.get())
+                else:
+                    cur.execute("EXEC spEliminarCarrera ?", entry_codigo.get())
             conexion.commit(); cargar_datos()
         except Exception as e:
             messagebox.showerror("Error al eliminar", str(e))

@@ -1,11 +1,12 @@
 import customtkinter as ctk
-from modulos import carreras, profesores, tutores, estudiantes
+from modulos import carreras, profesores, tutores, estudiantes, facultades
 
 class MainApp(ctk.CTk):
-    def __init__(self, conexion, login_win):
+    def __init__(self, usuario, conexion, login_win):
         super().__init__()
         self.conexion   = conexion     # pyodbc connection
         self.login_win  = login_win    # referencia a la ventana de login
+        self.nodo_actual = usuario  # nombre del usuario logueado
 
         # ---------- ventana principal ----------
         self.geometry("1000x600")
@@ -31,7 +32,7 @@ class MainApp(ctk.CTk):
 
         self.selector = ctk.CTkComboBox(
             frame,
-            values=["Carreras", "Profesores", "Tutores", "Estudiantes"],
+            values=["Carreras", "Profesores", "Tutores", "Estudiantes", 'Facultades'],
             command=self.mostrar_modulo
         )
         self.selector.set("Selecciona la tabla")
@@ -62,13 +63,15 @@ class MainApp(ctk.CTk):
             widget.destroy()
 
         if seleccion == "Carreras":
-            carreras.mostrar(self.content_frame, self.conexion)
+            carreras.mostrar(self.content_frame, self.conexion, self.nodo_actual)
         elif seleccion == "Profesores":
-            profesores.mostrar(self.content_frame, self.conexion)
+            profesores.mostrar(self.content_frame, self.conexion, self.nodo_actual)
         elif seleccion == "Tutores":
-            tutores.mostrar(self.content_frame, self.conexion)
+            tutores.mostrar(self.content_frame, self.conexion, self.nodo_actual)
         elif seleccion == "Estudiantes":
-            estudiantes.mostrar(self.content_frame, self.conexion)
+            estudiantes.mostrar(self.content_frame, self.conexion, self.nodo_actual)
+        elif seleccion == "Facultades":
+            facultades.mostrar(self.content_frame, self.conexion, self.nodo_actual)
 
     # ==================================================================
     #  Salir: cerrar conexión + volver al login

@@ -6,22 +6,35 @@ import customtkinter as ctk
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
+from decimal import Decimal, InvalidOperation
 
-def mostrar(parent: ctk.CTkFrame, conexion):
+def mostrar(parent: ctk.CTkFrame, conexion, nodo_actual):
 
     # -------------- Helpers ------------------------------------
     def cargar_datos():
         tabla.delete(*tabla.get_children())
         with conexion.cursor() as cur:
-            cur.execute("""
-                SELECT  codigo_profesor,
-                        modalidad_tutorias,
-                        estado,
-                        calificacion_promedio,
-                        codigo_facultad
-                FROM v_Tutor
-                ORDER BY codigo_profesor
-            """)
+            if nodo_actual == "fis":
+                cur.execute("""
+                    SELECT  codigo_profesor,
+                            modalidad_tutorias,
+                            estado,
+                            calificacion_promedio,
+                            codigo_facultad
+                    FROM v_Tutor
+                    WHERE codigo_facultad = 'FIS'
+                    ORDER BY codigo_profesor
+                """)
+            else:
+                cur.execute("""
+                    SELECT  codigo_profesor,
+                            modalidad_tutorias,
+                            estado,
+                            calificacion_promedio,
+                            codigo_facultad
+                    FROM v_Tutor
+                    ORDER BY codigo_profesor
+                """)
             for cod, mod, est, prom, fac in cur.fetchall():
                 tabla.insert("", "end",
                              values=(cod, mod, est, prom, fac))
@@ -40,9 +53,18 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def insertar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spInsertarTutor ?,?,?,?,?",
-                            (e_cod.get(), e_mod.get(), e_est.get(),
-                             e_fac.get(), e_pr.get()))
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    try:
+                        nota = Decimal(e_pr.get().strip())
+                    except InvalidOperation:
+                        messagebox.showerror("Error", "Calificación promedio inválida")
+                        return
+                    cur.execute("EXEC spInsertarTutor ?,?,?,?,?",
+                                (e_cod.get(), e_mod.get(), e_est.get(),
+                                 e_fac.get(), nota))
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al insertar", str(err))
@@ -50,9 +72,18 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def actualizar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spActualizarTutor ?,?,?,?,?",
-                            (e_cod.get(), e_mod.get(), e_est.get(),
-                             e_pr.get(),  e_fac.get()))
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    try:
+                        nota = Decimal(e_pr.get().strip())
+                    except InvalidOperation:
+                        messagebox.showerror("Error", "Calificación promedio inválida")
+                        return
+                    cur.execute("EXEC spActualizarTutor ?,?,?,?,?",
+                                (e_cod.get(), e_mod.get(), e_est.get(),
+                                 nota,  e_fac.get()))
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al actualizar", str(err))
@@ -60,7 +91,11 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def eliminar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spEliminarTutor ?", e_cod.get())
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "La facultad debe ser FIS")
+                    return
+                else:
+                    cur.execute("EXEC spEliminarTutor ?", e_cod.get())
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al eliminar", str(err))

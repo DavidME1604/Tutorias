@@ -6,22 +6,35 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
 
-def mostrar(parent: ctk.CTkFrame, conexion):
+def mostrar(parent: ctk.CTkFrame, conexion, nodo_actual):
 
     # ------------------ Helpers ---------------------------------
     def cargar_datos():
         tabla.delete(*tabla.get_children())
         with conexion.cursor() as cur:
-            cur.execute("""
-                SELECT  codigo_profesor,
-                        nombre,
-                        apellido,
-                        titulo,               -- si tu vista no trae título quítalo
-                        correo,
-                        codigo_facultad
-                FROM v_Profesor
-                ORDER BY apellido, nombre
-            """)
+            if nodo_actual == "fis" :
+                cur.execute("""
+                    SELECT  codigo_profesor,
+                            nombre,
+                            apellido,
+                            titulo,               -- si tu vista no trae título quítalo
+                            correo,
+                            codigo_facultad
+                    FROM v_Profesor
+                    WHERE codigo_facultad = 'FIS'
+                    ORDER BY apellido, nombre
+                """)
+            else:
+                cur.execute("""
+                    SELECT  codigo_profesor,
+                            nombre,
+                            apellido,
+                            titulo,               -- si tu vista no trae título quítalo
+                            correo,
+                            codigo_facultad
+                    FROM v_Profesor
+                    ORDER BY apellido, nombre
+                """)
             for cod, nom, ape, tit, mail, fac in cur.fetchall():
                 tabla.insert("", "end",
                              values=(cod, nom, ape, tit, mail, fac))
@@ -41,9 +54,13 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def insertar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spInsertarProfesorInfo ?,?,?,?,?,?",
-                            (e_cod.get(), e_nom.get(), e_ape.get(),
-                             e_tit.get(), e_mail.get(), e_fac.get()))
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "El profesor debe ser de la facultad FIS")
+                    return
+                else:
+                    cur.execute("EXEC spInsertarProfesorInfo ?,?,?,?,?,?",
+                                (e_cod.get(), e_nom.get(), e_ape.get(),
+                                e_tit.get(), e_mail.get(), e_fac.get()))
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al insertar", str(err))
@@ -51,9 +68,13 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def actualizar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spActualizarProfesorInfo ?,?,?,?,?,?",
-                            (e_cod.get(), e_nom.get(), e_ape.get(),
-                             e_tit.get(), e_mail.get(), e_fac.get()))
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "El profesor debe ser de la facultad FIS")
+                    return
+                else:
+                    cur.execute("EXEC spActualizarProfesorInfo ?,?,?,?,?,?",
+                                (e_cod.get(), e_nom.get(), e_ape.get(),
+                                e_tit.get(), e_mail.get(), e_fac.get()))
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al actualizar", str(err))
@@ -61,7 +82,11 @@ def mostrar(parent: ctk.CTkFrame, conexion):
     def eliminar():
         try:
             with conexion.cursor() as cur:
-                cur.execute("EXEC spEliminarProfesorInfo ?", e_cod.get())
+                if nodo_actual == "fis" and not e_fac.get() == "FIS":
+                    messagebox.showerror("Error", "El profesor debe ser de la facultad FIS")
+                    return
+                else:
+                    cur.execute("EXEC spEliminarProfesorInfo ?", e_cod.get())
             conexion.commit(); cargar_datos()
         except Exception as err:
             messagebox.showerror("Error al eliminar", str(err))
