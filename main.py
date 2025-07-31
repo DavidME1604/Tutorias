@@ -1,4 +1,4 @@
-from login import LoginApp
+from resources.login import LoginApp
 
 if __name__ == "__main__":
     LoginApp().mainloop()
